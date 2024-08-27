@@ -5,14 +5,15 @@
    Set to one and pass either flg_elm or flg_rcm, and set to one and pass either flg_ais or flg_gis
    Input dataset must contain necessary fields (QICE for ELM, Icemask_rcm for RACMO)
    Output dataset names should indicate ice sheet and grid
-   flg_elm=1
-   flg_rcm=1
-   flg_ais=1;ish_nm=ais
-   flg_gis=1;ish_nm=gis
-   ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_elm} # Produce AIS mask from ELM data
-   ncap2 -O --script="*flg_gis=${flg_gis};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_elm} # Produce GrIS mask from ELM data
-   ncap2 -O --script="*flg_ais=${flg_ais};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_rcm} # Produce AIS mask from RACMO data
-   ncap2 -O --script="*flg_gis=${flg_gis};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_rcm} # Produce GrIS mask from RACMO data */
+   flg_elm=1;grd_nm=elm;
+   flg_rcm=1;grd_nm=rcm;
+   flg_ais=1;ish_nm=ais;
+   flg_gis=1;ish_nm=gis;
+   fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from ELM data
+   ncap2 -O --script="*flg_gis=${flg_gis};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from ELM data
+   ncap2 -O --script="*flg_ais=${flg_ais};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from RACMO data
+   ncap2 -O --script="*flg_gis=${flg_gis};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from RACMO data */
 
 if(!exists(flg_ais)) *flg_ais=0;
 if(!exists(flg_gis)) *flg_gis=0;
@@ -29,6 +30,8 @@ if(flg_gis && flg_rcm) *flg_gis_rcm=1; else *flg_gis_rcm=0;
 *lat_2D[$lat,$lon]=lat;
 *lon_2D[$lat,$lon]=lon; // NB: RACMO and ELM are both on [-180,180]
 
+*msk_vld_thr=1.0e-5f; // Minimum fraction for ice (smaller coverages will be zeroed)
+
 if(flg_elm){
   // Initialize output icemask cells to 0 (none are _FillValue)
   *Icemask_qice[$lat,$lon]=0.0f;
@@ -43,34 +46,37 @@ if(flg_elm){
 if(flg_rcm){
   // Initialize output icemask to (copy-of) RACMO-provided icemask variable
   Icemask_rcm=Icemask; 
-  Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Antarctica)";
 
   if(exists(Area)) Area@long_name="Gridcell area [km2] copied from RACMO 2.4 gridfile";
   if(exists(area)) area@long_name="Gridcell area with canonical name";
   if(exists(area_non_crd)) area_non_crd@long_name="Gridcell area with non-coordinate name for math";
+  if(exists(Icemask_rcm23)) Icemask@long_name="Ice mask copied from RACMO 2.3 gridfile";
   if(exists(Icemask_rcm24)) Icemask@long_name="Ice mask copied from RACMO 2.4 gridfile";
+  if(exists(Icemask_GR)) Icemask_GR@long_name="Original ice mask variable from RACMO 2.3 gridfile";
   if(exists(IceMask)) IceMask@long_name="Original ice mask variable from RACMO 2.4 gridfile";
   if(exists(Icemask)) Icemask@long_name="Copy (with canonical name) of original RACMO ice mask variable";
   if(exists(LSM)) LSM@long_name="Land/Sea Mask copied from RACMO 2.4 gridfile";
+  if(exists(LSM_GR)) LSM_GR@long_name="Land/Sea Mask copied from RACMO 2.3 gridfile";
 } // !flg_rcm
-
-if(flg_ais_rcm){
-  ;
-} // !flg_ais_rcm
 
 if(flg_ais_elm){
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Antarctica)"; 
-
   // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S, set AIS region to (1,2]
   where(lat_2D >= -60) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
-
-  // AIS values are now mask 1 < Icemask <= 2, non-land regions are _FillValue, and non-AIS land regions are 0 < mask <= 1
+  // AIS values are now mask 1 < Icemask <= 2 and non-AIS land regions are 0 < mask <= 1
   *ROW_bnd=1; // Boundary between AIS and Rest-of-World
 } // !flg_ais_elm
 
-if(flg_gis){
+if(flg_ais_rcm){
+  Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Antarctica)";
+  // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S, set AIS region to (1,2]
+  where(lat_2D >= -60) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1;
+  // AIS values are now mask 1 < Icemask <= 2 and non-AIS land regions are 0 < mask <= 1
+  *ROW_bnd=1; // Boundary between AIS and Rest-of-World
+} // !flg_ais_rcm
+
+if(flg_gis_elm){
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Greenland)";
-  
   // Hyperslab 1: Set GrIS region to (1,2]
   where((lat_2D >= 58 && lat_2D <= 84) && (lon_2D >= -73 && lon_2D <= -10)) Icemask_qice=Icemask_qice+1; 
   // Hyperslab 2: Exclude Iceland (which remains 1), set GrIS region to (2,3]
@@ -84,20 +90,49 @@ if(flg_gis){
   // Hyperslab 6: Exclude notch in Ellesmere Passage (which remains 2), set GrIS region to (6,7]
   where((lat_2D >= 81.5 && lat_2D <= 84) && (lon_2D >= -69 && lon_2D <= -61.5)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
 
-  // GrIS values are now 6 < Icemask <= 7, non-land regions are _FillValue, and non-GrIS land regions are 0 < mask <= 6
+  // GrIS values are now 6 < Icemask <= 7 and non-GrIS land regions are 0 < mask <= 6
   *ROW_bnd=6; // Boundary between GrIS and Rest-of-World
-} // !flg_gis
+} // !flg_gis_elm
 
-where(Icemask_qice <= ROW_bnd) Icemask_qice=0.0; elsewhere Icemask_qice=Icemask_qice-ROW_bnd;
-*msk_vld_thr=1.0e-5f; // Minimum fraction for ice (smaller coverages will be zeroed)
-// Threshold helps remediate small epsilons from mask shaving, aggregation
-where(Icemask_qice < msk_vld_thr) Icemask_qice=0.0f;
+if(flg_gis_rcm){
+  Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Greenland)";
+  // Hyperslab 1: Exclude Iceland (which remains 1), set GrIS region to (1.0,2.0]
+  where((lat_2D >= 62 && lat_2D <= 68) && (lon_2D >= -25 && lon_2D <= -12)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 2: Exclude southern Canadian rchipelago (which remains 2), set GrIS region to (2.0,3.0]
+  where((lat_2D >= 60 && lat_2D <= 73) && (lon_2D >= -75 && lon_2D <= -60)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 3: Exclude mid-Ellesmere Island (which remains 2), set GrIS region to (3.0,4.0]
+  where((lat_2D >= 79 && lat_2D <= 84) && (lon_2D >= -80 && lon_2D <= -67)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 4: Exclude north-Ellesmere Island (which remains 2), set GrIS region to (4.0,5.0]
+  where((lat_2D >= 82 && lat_2D <= 84) && (lon_2D >= -67 && lon_2D <= -62)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 5: Exclude notch in Ellesmere Passage (which remains 2), set GrIS region to (5.0,6.0]
+  where((lat_2D >= 81.5 && lat_2D <= 84) && (lon_2D >= -69 && lon_2D <= -61.5)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 6: Exclude land east of -10E (Jan Mayen and Svalbard) (which remain 2), set GrIS region to (6.0,7.0]
+  where(lon_2D >= -10) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 7: Exclude land west of -73E (Devon Island and rest of Ellesmere) (which remain 2), set GrIS region to (7.0,8.0]
+  where(lon_2D <= -73) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
+  // Hyperslab 8: Exclude remaining notch in Ellesmere Island (which remain 2), set GrIS region to (8.0,9.0]
+  where((lat_2D >= 80.5 && lat_2D <= 82) && (lon_2D >= -69 && lon_2D <= -65)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 
 
-// Single-precision math creates small epsilons near 0 and 1. Round ELM mask to whole values (0,1)
-// NB: Do round() if/when ELM icemask is a binary (0 or 1) mask based solely on QICE
-// NB: Do NOT round() if/when ELM icemask uses uses PCT_LANDUNIT and so is a fractional (not binary) mask
-Icemask_qice=round(Icemask_qice);
+  // GrIS values are now 8 < Icemask <= 9, non-land regions are 0, and non-GrIS land regions are 0 < mask <= 8
+  *ROW_bnd=8; // Boundary between GrIS and Rest-of-World
+} // !flg_gis_rcm
 
-ram_write(Icemask_qice);
-ram_delete(lat_2D);
-ram_delete(lon_2D);
+if(flg_elm){
+  where(Icemask_qice <= ROW_bnd) Icemask_qice=0.0; elsewhere Icemask_qice=Icemask_qice-ROW_bnd;
+  // Remediate small epsilons from mask shaving, aggregation
+  where(Icemask_qice < msk_vld_thr) Icemask_qice=0.0f;
+  // Single-precision math creates small epsilons near 0 and 1. Round ELM mask to whole values (0,1)
+  // NB: Do round() if/when ELM icemask is a binary (0 or 1) mask based solely on QICE
+  // NB: Do NOT round() if/when ELM icemask uses uses PCT_LANDUNIT and so is a fractional (not binary) mask
+  Icemask_qice=round(Icemask_qice);
+  ram_write(Icemask_qice);
+  ram_delete(lat_2D);
+  ram_delete(lon_2D);
+} // !flg_elm
+if(flg_rcm){
+  where(Icemask_rcm <= ROW_bnd) Icemask_rcm=0.0; elsewhere Icemask_rcm=Icemask_rcm-ROW_bnd;
+  // Remediate small epsilons from mask shaving, aggregation
+  where(Icemask_rcm < msk_vld_thr) Icemask_rcm=0.0f;
+  // Do not round() RACMO Icemask! That would eliminate the fractional mask!
+} // !flg_rcm
+
