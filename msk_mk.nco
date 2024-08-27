@@ -1,30 +1,64 @@
 // $Header$ -*-C++-*-
 
-/* Purpose: Convert ELM QICE field into AIS or GrIS Icemask
+/* Purpose: Convert ELM QICE field or RACMO Icemask field into AIS or GrIS Icemask
    Usage:
-   flg_ais=1
-   flg_gis=1
-   ncap2 -O --script="*flg_ais=${flg_ais}" -S ~/icemask/msk_elm.nco ${fl_in} ${fl_elm} # Produce AIS masks
-   ncap2 -O --script="*flg_gis=${flg_gis}" -S ~/icemask/msk_elm.nco ${fl_in} ${fl_elm} # Produce GrIS masks */
+   Set to one and pass either flg_elm or flg_rcm, and set to one and pass either flg_ais or flg_gis
+   Input dataset must contain necessary fields (QICE for ELM, Icemask_rcm for RACMO)
+   Output dataset names should indicate ice sheet and grid
+   flg_elm=1
+   flg_rcm=1
+   flg_ais=1;ish_nm=ais
+   flg_gis=1;ish_nm=gis
+   ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_elm} # Produce AIS mask from ELM data
+   ncap2 -O --script="*flg_gis=${flg_gis};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_elm} # Produce GrIS mask from ELM data
+   ncap2 -O --script="*flg_ais=${flg_ais};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_rcm} # Produce AIS mask from RACMO data
+   ncap2 -O --script="*flg_gis=${flg_gis};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_rcm} # Produce GrIS mask from RACMO data */
 
 if(!exists(flg_ais)) *flg_ais=0;
 if(!exists(flg_gis)) *flg_gis=0;
+if(!exists(flg_elm)) *flg_elm=0;
+if(!exists(flg_rcm)) *flg_rcm=0;
 if(!flg_ais && !flg_gis) print("ERROR: Must set flg_ais or flg_gis");
 if(flg_ais && flg_gis) print("ERROR: flg_ais or flg_gis cannot both be set");
 
+if(flg_ais && flg_elm) *flg_ais_elm=1; else *flg_ais_elm=0;
+if(flg_ais && flg_rcm) *flg_ais_rcm=1; else *flg_ais_rcm=0;
+if(flg_gis && flg_elm) *flg_gis_elm=1; else *flg_gis_elm=0;
+if(flg_gis && flg_rcm) *flg_gis_rcm=1; else *flg_gis_rcm=0;
+
 *lat_2D[$lat,$lon]=lat;
-*lon_2D[$lat,$lon]=lon;
+*lon_2D[$lat,$lon]=lon; // NB: RACMO and ELM are both on [-180,180]
 
-// Set all icemask cells to 0 (none are _FillValue)
-*Icemask_qice[$lat,$lon]=0.0f;
-Icemask_qice@units="fraction";
+if(flg_elm){
+  // Initialize output icemask cells to 0 (none are _FillValue)
+  *Icemask_qice[$lat,$lon]=0.0f;
+  Icemask_qice@units="fraction";
 
-// Set initial mask based on QICE
-//where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=1; // Set binary (integer) mask
-//where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=PCT_LANDUNIT(:,2.:)*0.01+1; // Set binary (fractional) mask
-where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=Icemask_qice+1; // Set (potentially) fractional mask
-  
-if(flg_ais){
+  // Base initial mask on QICE
+  //where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=1; // Set binary (integer) mask
+  //where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=PCT_LANDUNIT(:,2.:)*0.01+1; // Set binary (fractional) mask
+  where(QICE.missing()) Icemask_qice=0; elsewhere Icemask_qice=Icemask_qice+1; // Set (potentially) fractional mask
+} // !flg_elm
+
+if(flg_rcm){
+  // Initialize output icemask to (copy-of) RACMO-provided icemask variable
+  Icemask_rcm=Icemask; 
+  Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Antarctica)";
+
+  if(exists(Area)) Area@long_name="Gridcell area [km2] copied from RACMO 2.4 gridfile";
+  if(exists(area)) area@long_name="Gridcell area with canonical name";
+  if(exists(area_non_crd)) area_non_crd@long_name="Gridcell area with non-coordinate name for math";
+  if(exists(Icemask_rcm24)) Icemask@long_name="Ice mask copied from RACMO 2.4 gridfile";
+  if(exists(IceMask)) IceMask@long_name="Original ice mask variable from RACMO 2.4 gridfile";
+  if(exists(Icemask)) Icemask@long_name="Copy (with canonical name) of original RACMO ice mask variable";
+  if(exists(LSM)) LSM@long_name="Land/Sea Mask copied from RACMO 2.4 gridfile";
+} // !flg_rcm
+
+if(flg_ais_rcm){
+  ;
+} // !flg_ais_rcm
+
+if(flg_ais_elm){
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Antarctica)"; 
 
   // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S, set AIS region to (1,2]
@@ -32,7 +66,7 @@ if(flg_ais){
 
   // AIS values are now mask 1 < Icemask <= 2, non-land regions are _FillValue, and non-AIS land regions are 0 < mask <= 1
   *ROW_bnd=1; // Boundary between AIS and Rest-of-World
-} // !flg_ais
+} // !flg_ais_elm
 
 if(flg_gis){
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Greenland)";
