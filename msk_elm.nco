@@ -1,0 +1,74 @@
+// $Header$ -*-C++-*-
+
+/* Purpose: Convert ELM QICE field into AIS or GrIS Icemask
+   Usage:
+   flg_ais=1
+   flg_gis=1
+   ncap2 -O --script='flg_ais=${flg_ais}' -S ~/msk_elm.nco ${fl_in} ${fl_elm} # Produce AIS masks
+   ncap2 -O --script='flg_gis=${flg_gis}' -S ~/msk_elm.nco ${fl_in} ${fl_elm} # Produce GrIS masks */
+
+if(!exists(flg_ais)) flg_ais=0;
+if(!exists(flg_gis)) flg_gis=0;
+if(!flg_ais && !flg_gis) print("ERROR: Must set flg_ais or flg_gis");
+if(flg_ais && flg_gis) print("ERROR: flg_ais or flg_gis cannot both be set");
+
+*lat_2D[$lat,$lon]=lat;
+*lon_2D[$lat,$lon]=lon;
+
+// Hyperslab 0: Set QICE cells to 0, ROW is _FillValue
+*Icemask_qice[$lat,$lon]=0.0f;
+Icemask_qice@units="fraction";
+
+if(flg_ais){
+  Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Antarctica)"; 
+  where(QICE == )Icemask_qice=QICE*0; // Initialze QICE cells to 0, ROW is _FillValue
+
+  // Hyperslab 0: QICE sets binary mask
+  where(Icemask_qice == QICE.get_miss()) Icemask_qice=0; elsewhere Icemask_qice=1;
+  
+  // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S 
+  where(lat_2D >= -60) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+
+  // AIS values are now mask == 2, non-land regions are _FillValue, and non-AIS land regions are 0 < mask <= 1
+  ROW_bnd=1; // Boundary between AIS and Rest-of-World
+
+} // !flg_ais
+
+if(flg_gis){
+  Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Greenland)";
+  
+  // Hyperslab 1: Set GrIS region to 1
+  where((lat_2D >= 58 && lat_2D <= 84) && (lon_2D >= -73 && lon_2D <= -10)) Icemask_qice=Icemask_qice+1; 
+  // Hyperslab 2: Exclude Iceland (which remains 1), set GrIS region to 2
+  where((lat_2D >= 62 && lat_2D <= 68) && (lon_2D >= -25 && lon_2D <= -12)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+  // Hyperslab 3: Exclude southern Canadian rchipelago (which remains 2), set GrIS region to 3
+  where((lat_2D >= 60 && lat_2D <= 73) && (lon_2D >= -75 && lon_2D <= -60)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+  // Hyperslab 4: Exclude mid-Ellesmere Island (which remains 2), set GrIS region to 4
+  where((lat_2D >= 79 && lat_2D <= 84) && (lon_2D >= -80 && lon_2D <= -67)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+  // Hyperslab 5: Exclude north-Ellesmere Island (which remains 2), set GrIS region to 5
+  where((lat_2D >= 82 && lat_2D <= 84) && (lon_2D >= -67 && lon_2D <= -62)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+  // Hyperslab 6: Exclude notch in Ellesmere Passage (which remains 2), set GrIS region to 6
+  where((lat_2D >= 81.5 && lat_2D <= 84) && (lon_2D >= -69 && lon_2D <= -61.5)) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
+
+  // GrIS values are now 5 < Icemask <= 6, non-land regions are _FillValue, and non-GrIS land regions are 0 < mask <= 5
+  *ROW_bnd=5; // Boundary between GrIS and Rest-of-World
+ } // !flg_gis
+
+where(Icemask_qice <= ROW_bnd) Icemask_qice=0.0; elsewhere Icemask_qice=Icemask_qice-ROW_bnd;
+*msk_vld_thr=1.0e-5f; // Minimum fraction for ice (smaller coverages will be zeroed)
+// Threshold helps remediate small epsilons from mask shaving, aggregation
+where(Icemask_qice < msk_vld_thr) Icemask_qice=0.0f;
+
+// Single-precision math creates small epsilons near 0 and 1. Round ELM mask to whole values (0,1)
+// NB: Do round() if/when ELM icemask is a binary (0 or 1) mask based solely on QICE
+// NB: Do NOT round() if/when ELM icemask uses uses PCT_LANDUNIT and so is a fractional (not binary) mask
+Icemask_qice=round(Icemask_qice);
+
+// Change all missing values to zero (i.e., no ice)
+Icemask_qice.change_miss(0.0f);
+// Remove _FillValue so fractional icemask is well-defined globally
+Icemask_qice.delete_miss();
+
+ram_write(Icemask_qice);
+ram_delete(lat_2D);
+ram_delete(lon_2D);
