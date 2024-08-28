@@ -5,8 +5,8 @@
    Set to one and pass either flg_elm or flg_rcm, and set to one and pass either flg_ais or flg_gis
    Input dataset must contain necessary fields (QICE for ELM, Icemask_rcm for RACMO)
    Output dataset names should indicate ice sheet and grid
-   ish_nm=gis;flg_gis=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_19980-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
-   ish_nm=ais;flg_ais=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_19980-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=gis;flg_gis=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=ais;flg_ais=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
    ish_nm=gis;flg_gis=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_gis_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
    ish_nm=ais;flg_ais=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_ais_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
    ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from ELM data
