@@ -8,18 +8,18 @@
 # ~/icemask/icemask.sh > ~/foo.txt 2>&1 &
 
 # Convert raw RACMO gridfiles to standardized gridfiles and derive SCRIP grids
-if false; then
+if true; then
     ~/icemask/racmo_raw2std.sh 
-fi # !false
+fi # !true
     
 # Compute mapfiles from derived grids
-if false; then
+if true; then
     ncremap -a traave -s ${DATA}/grids/racmo_gis_566x438.nc -g ${DATA}/grids/r05_360x720.nc --map=${DATA}/maps/map_racmo_gis_566x438_to_r05_traave.20240801.nc
     ncremap -a traave -s ${DATA}/grids/racmo_ais_591x726.nc -g ${DATA}/grids/r05_360x720.nc --map=${DATA}/maps/map_racmo_ais_591x726_to_r05_traave.20240801.nc
     # r05->RACMO maps: TR algorithms must use --a2o option and switch grid orders
     ncremap --a2o -a traave -s ${DATA}/grids/r05_360x720.nc -g ${DATA}/grids/racmo_gis_566x438.nc --map=${DATA}/maps/map_r05_to_racmo_gis_566x438_traave.20240801.nc
     ncremap --a2o -a traave -s ${DATA}/grids/r05_360x720.nc -g ${DATA}/grids/racmo_ais_591x726.nc --map=${DATA}/maps/map_r05_to_racmo_ais_591x726_traave.20240801.nc
-fi # !false
+fi # !true
 
 # AIS RACMO:
 ncap2 -O --script="*flg_ais=1;*flg_rcm=1;" -S ~/icemask/msk_mk.nco ${HOME}/msk_ais_rcm24.nc ${HOME}/msk_ais_rcm.nc
