@@ -5,14 +5,18 @@
    Set to one and pass either flg_elm or flg_rcm, and set to one and pass either flg_ais or flg_gis
    Input dataset must contain necessary fields (QICE for ELM, Icemask_rcm for RACMO)
    Output dataset names should indicate ice sheet and grid
-   ish_nm=gis;flg_gis=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
-   ish_nm=ais;flg_ais=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
-   ish_nm=gis;flg_gis=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_gis_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
-   ish_nm=ais;flg_ais=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_ais_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
-   ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from ELM data
-   ncap2 -O --script="*flg_gis=${flg_gis};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from ELM data
-   ncap2 -O --script="*flg_ais=${flg_ais};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from RACMO data
-   ncap2 -O --script="*flg_gis=${flg_gis};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from RACMO data */
+
+   ish_nm=gis;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ncap2 -O --script="*flg_gis=1;*flg_elm=1;" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from ELM data
+
+   ish_nm=ais;grd_nm=elm;fl_in=${HOME}/QICE_1998-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ncap2 -O --script="*flg_ais=1;*flg_elm=1;" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from ELM data
+
+   ish_nm=gis;grd_nm=rcm;fl_in=${HOME}/msk_gis_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ncap2 -O --script="*flg_gis=1;*flg_rcm=1;" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from RACMO data
+
+   ish_nm=ais;grd_nm=rcm;fl_in=${HOME}/msk_ais_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ncap2 -O --script="*flg_ais=1;*flg_rcm=1;" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from RACMO data */
 
 if(!exists(flg_ais)) *flg_ais=0;
 if(!exists(flg_gis)) *flg_gis=0;
@@ -49,8 +53,8 @@ if(flg_rcm){
   if(exists(Area)) Area@long_name="Gridcell area [km2] copied from RACMO 2.4 gridfile";
   if(exists(area)) area@long_name="Gridcell area with canonical name";
   if(exists(area_non_crd)) area_non_crd@long_name="Gridcell area with non-coordinate name for math";
-  if(exists(Icemask_rcm23)) Icemask@long_name="Ice mask copied from RACMO 2.3 gridfile";
-  if(exists(Icemask_rcm24)) Icemask@long_name="Ice mask copied from RACMO 2.4 gridfile";
+  if(exists(Icemask_rcm23)) Icemask_rcm23@long_name="Ice mask copied from RACMO 2.3 gridfile";
+  if(exists(Icemask_rcm24)) Icemask_rcm24@long_name="Ice mask copied from RACMO 2.4 gridfile";
   if(exists(Icemask_GR)) Icemask_GR@long_name="Original ice mask variable from RACMO 2.3 gridfile";
   if(exists(IceMask)) IceMask@long_name="Original ice mask variable from RACMO 2.4 gridfile";
   if(exists(Icemask)) Icemask@long_name="Copy (with canonical name) of original RACMO ice mask variable";

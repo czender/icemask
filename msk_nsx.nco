@@ -7,10 +7,15 @@
 
    Usage:
    fl_in=${HOME}/msk_ais_rcm_r05.nc;fl_out=${DATA}/msk_ais_r05.nc # AIS intersection masks on ELM r05 grid
-   fl_in=${HOME}/msk_ais_rcm.nc;fl_out=${DATA}/msk_ais_rcm.nc     # AIS intersection masks on RACMO grid
-   fl_in=${HOME}/msk_gis_rcm_r05.nc;fl_out=${DATA}/msk_gis_r05.nc # GrIS intersection masks on ELM r05 grid
-   fl_in=${HOME}/msk_gis_rcm.nc;fl_out=${DATA}/msk_gis_rcm.nc     # GrIS intersection masks on RACMO grid
+   ncap2 -O -S ~/msk_nsx.nco ${fl_in} ${fl_out} # Compute intersection and difference icemasks
 
+   fl_in=${HOME}/msk_ais_rcm.nc;fl_out=${DATA}/msk_ais_rcm.nc     # AIS intersection masks on RACMO grid
+   ncap2 -O -S ~/msk_nsx.nco ${fl_in} ${fl_out} # Compute intersection and difference icemasks
+
+   fl_in=${HOME}/msk_gis_rcm_r05.nc;fl_out=${DATA}/msk_gis_r05.nc # GrIS intersection masks on ELM r05 grid
+   ncap2 -O -S ~/msk_nsx.nco ${fl_in} ${fl_out} # Compute intersection and difference icemasks
+
+   fl_in=${HOME}/msk_gis_rcm.nc;fl_out=${DATA}/msk_gis_rcm.nc     # GrIS intersection masks on RACMO grid
    ncap2 -O -S ~/msk_nsx.nco ${fl_in} ${fl_out} # Compute intersection and difference icemasks */
 
 *msk_vld_thr=1.0e-5f; // Minimum fraction for ice (smaller coverages will be zeroed)

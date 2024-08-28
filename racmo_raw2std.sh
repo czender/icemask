@@ -33,6 +33,8 @@ for ish_nm in ais gis; do
     ncks -O -x -v Basins ~/msk_${ish_nm}_rcm24.nc ~/msk_${ish_nm}_rcm24.nc
     # Copy original 2.4 mask and area variables into Icemask_rcm24, Icemask, and area for back-compatibility
     ncap2 -O -s 'Icemask_rcm24=Icemask=IceMask;area=area_non_crd=Area' ~/msk_${ish_nm}_rcm24.nc ~/msk_${ish_nm}_rcm24.nc # NB: RACMO GrIS 2.3 uses Icemask_GR, RACMO 2.4 AIS+GrIS use IceMask
+    # Eliminate unwanted variables: IceMask is too similar to Icemask, avoid the confusion!
+    ncks -O -x -v IceMask ~/msk_${ish_nm}_rcm24.nc ~/msk_${ish_nm}_rcm24.nc
 
     # We also have RACMO 2.3 data for GrIS, though it requires a separate procedure
     if [ ${ish_nm} = 'gis' ]; then
