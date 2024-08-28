@@ -40,7 +40,7 @@ ncremap --sgs_frc=Icemask_qice --map=${DATA}/maps/map_r05_to_racmo_ais_591x726_t
 ncap2 -O --script="*flg_gis=1;*flg_elm=1;" -S ~/icemask/msk_mk.nco ${HOME}/QICE_1998-2020_climo.nc ${HOME}/msk_gis_elm.nc
 ncks -O -6 -C -x -v time,time_bounds ${HOME}/msk_gis_elm.nc ${HOME}/msk_gis_elm.nc
 ncatted -O -a _FillValue,'[lat]|[lon]',d,, -a missing_value,'[lat]|[lon]',d,, ${HOME}/msk_gis_elm.nc ${HOME}/msk_gis_elm.nc
-ncremap --sgs_frc=Icemask_qice --map=${DATA}/maps/map_r05_to_racmo_gis_591x726_traave.20240801.nc ${HOME}/msk_gis_elm.nc ${HOME}/msk_gis_elm_rcm.nc
+ncremap --sgs_frc=Icemask_qice --map=${DATA}/maps/map_r05_to_racmo_gis_566x438_traave.20240801.nc ${HOME}/msk_gis_elm.nc ${HOME}/msk_gis_elm_rcm.nc
 
 # Once all trimmed mask files exist, append the ELM masks to the RACMO mask files so intersection masks can be computed
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm.nc ${HOME}/msk_ais_rcm_r05.nc
