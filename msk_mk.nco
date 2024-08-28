@@ -5,11 +5,10 @@
    Set to one and pass either flg_elm or flg_rcm, and set to one and pass either flg_ais or flg_gis
    Input dataset must contain necessary fields (QICE for ELM, Icemask_rcm for RACMO)
    Output dataset names should indicate ice sheet and grid
-   flg_elm=1;grd_nm=elm;
-   flg_rcm=1;grd_nm=rcm;
-   flg_ais=1;ish_nm=ais;
-   flg_gis=1;ish_nm=gis;
-   fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=gis;flg_gis=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_19980-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=ais;flg_ais=1;flg_elm=1;grd_nm=elm;fl_in=${HOME}/QICE_19980-2020_climo.nc;fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=gis;flg_gis=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_gis_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
+   ish_nm=ais;flg_ais=1;flg_rcm=1;grd_nm=rcm;fl_in=${HOME}/msk_ais_rcm24.nc;        fl_out=${HOME}/msk_${ish_nm}_${grd_nm}.nc
    ncap2 -O --script="*flg_ais=${flg_ais};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from ELM data
    ncap2 -O --script="*flg_gis=${flg_gis};*flg_elm=${flg_elm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce GrIS mask from ELM data
    ncap2 -O --script="*flg_ais=${flg_ais};*flg_rcm=${flg_rcm};" -S ~/icemask/msk_mk.nco ${fl_in} ${fl_out} # Produce AIS mask from RACMO data
@@ -60,6 +59,7 @@ if(flg_rcm){
 } // !flg_rcm
 
 if(flg_ais_elm){
+  print("msk_mk.nco: Processing ELM QICE into AIS Icemask_qice on ELM grid...\n");
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Antarctica)"; 
   // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S, set AIS region to (1,2]
   where(lat_2D >= -60) Icemask_qice=Icemask_qice; elsewhere Icemask_qice=Icemask_qice+1; 
@@ -68,6 +68,7 @@ if(flg_ais_elm){
 } // !flg_ais_elm
 
 if(flg_ais_rcm){
+  print("msk_mk.nco: Processing RACMO Icemask into AIS Icemask_rcm on RACMO AIS grid...\n");
   Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Antarctica)";
   // Hyperslab 1: Exclude land islands (S. Georgia, Central Islands) equatorward of 60S, set AIS region to (1,2]
   where(lat_2D >= -60) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1;
@@ -76,6 +77,7 @@ if(flg_ais_rcm){
 } // !flg_ais_rcm
 
 if(flg_gis_elm){
+  print("msk_mk.nco: Processing ELM QICE into GrIS Icemask_qice on ELM grid...\n");
   Icemask_qice@long_name="ELM Ice Mask (100% in QICE cells, restricted to Greenland)";
   // Hyperslab 1: Set GrIS region to (1,2]
   where((lat_2D >= 58 && lat_2D <= 84) && (lon_2D >= -73 && lon_2D <= -10)) Icemask_qice=Icemask_qice+1; 
@@ -95,6 +97,7 @@ if(flg_gis_elm){
 } // !flg_gis_elm
 
 if(flg_gis_rcm){
+  print("msk_mk.nco: Processing RACMO Icemask into GrIS Icemask_rcm on RACMO GrIS grid...\n");
   Icemask_rcm@long_name="RACMO 2.4 Fractional Ice Mask (restricted to Greenland)";
   // Hyperslab 1: Exclude Iceland (which remains 1), set GrIS region to (1.0,2.0]
   where((lat_2D >= 62 && lat_2D <= 68) && (lon_2D >= -25 && lon_2D <= -12)) Icemask_rcm=Icemask_rcm; elsewhere Icemask_rcm=Icemask_rcm+1; 

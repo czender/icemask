@@ -1,0 +1,32 @@
+// $Header$ -*-C++-*-
+
+/* Purpose: Compute intersection of RACMO and ELM masks, and difference of intersection with RACMO and ELM masks
+   Script works on either grid (ELM or RACMO), on either icesheet (GrIS or AIS)
+   Grid- and icesheet-specific information is referenced only through I/O filenames
+   Algorithm: Where RACMO and ELM masks are both non-zero, set intersection mask to RACMO value
+
+   Usage:
+   fl_in=${HOME}/msk_ais_rcm_r05.nc;fl_out=${DATA}/msk_ais_r05.nc # AIS intersection masks on ELM r05 grid
+   fl_in=${HOME}/msk_ais_rcm.nc;fl_out=${DATA}/msk_ais_rcm.nc     # AIS intersection masks on RACMO grid
+   fl_in=${HOME}/msk_gis_rcm_r05.nc;fl_out=${DATA}/msk_gis_r05.nc # GrIS intersection masks on ELM r05 grid
+   fl_in=${HOME}/msk_gis_rcm.nc;fl_out=${DATA}/msk_gis_rcm.nc     # GrIS intersection masks on RACMO grid
+
+   ncap2 -O -S ~/msk_nsx.nco ${fl_in} ${fl_out} # Compute intersection and difference icemasks */
+
+*msk_vld_thr=1.0e-5f; // Minimum fraction for ice (smaller coverages will be zeroed)
+
+Icemask_nsx=Icemask_rcm*0;
+Icemask_nsx@long_name="Fractional Ice Mask (intersection of RACMO 2.4 and ELM QICE masks)";
+
+// Remediate small epsilons from mask shaving, aggregation
+where((Icemask_rcm >= msk_vld_thr) && (Icemask_qice >= msk_vld_thr)) Icemask_nsx=Icemask_rcm;
+
+// Diagnostic difference masks
+Icemask_nsx_mns_rcm=Icemask_nsx-Icemask_rcm;
+Icemask_nsx_mns_rcm@long_name="Intersection mask minus RACMO 2.4 mask";
+Icemask_nsx_mns_elm=Icemask_nsx-Icemask_qice;
+Icemask_nsx_mns_elm@long_name="Intersection mask minus ELM QICE mask";
+
+// Last step: Create/overwrite canonical ice mask variable with intersection mask
+Icemask=Icemask_nsx;
+Icemask@long_name="Fractional Ice Mask (intersection of RACMO 2.4 and ELM QICE masks)";
