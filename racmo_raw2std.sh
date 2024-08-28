@@ -48,8 +48,8 @@ for ish_nm in ais gis; do
 	
     fi # !ish_nm
 
-    # Infer grid-file (NB: RACMO 2.3 and 2.4 _grids_ are identical, though the ice masks differ)
-    #ncremap --area_dgn -d ~/msk_${ish_nm}_rcm24.nc -g ${DATA}/grids/racmo_${ish_nm}_${rcm_rsn}.nc
+    # Infer SCRIP grid-file (NB: RACMO 2.3 and 2.4 _grids_ are identical, though their ice masks differ)
+    ncremap --area_dgn -d ~/msk_${ish_nm}_rcm24.nc -g ${DATA}/grids/racmo_${ish_nm}_${rcm_rsn}.nc
 
 done # !ish_nm
 
