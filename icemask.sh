@@ -88,10 +88,10 @@ ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_r0125_rcm.nc
 
 # Unless renamed first, r05 and r0125 masks would overwrite eachother when appended to RACMO mask files
-ncrename -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_elm_r05_rcm.nc
-ncrename -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_elm_r05_rcm.nc
-ncrename -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_elm_r0125_rcm.nc
-ncrename -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_elm_r0125_rcm.nc
+ncrename -O -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_elm_r05_rcm.nc
+ncrename -O -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_elm_r05_rcm.nc
+ncrename -O -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_elm_r0125_rcm.nc
+ncrename -O -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_elm_r0125_rcm.nc
 
 # Append ELM masks with grid-specific names to RACMO mask files
 # Store r05 grid in r0125 mask file and visa versa
