@@ -66,47 +66,61 @@ ncks -O -6 -C -x -v time,time_bounds ${HOME}/msk_gis_elm_r0125.nc ${HOME}/msk_gi
 ncatted -O -a _FillValue,'[lat]|[lon]',d,, -a missing_value,'[lat]|[lon]',d,, ${HOME}/msk_gis_elm_r0125.nc ${HOME}/msk_gis_elm_r0125.nc
 ncremap --sgs_frc=Icemask_qice --map=${DATA}/maps/map_r0125_to_racmo_gis_566x438_traave.20240801.nc ${HOME}/msk_gis_elm_r0125.nc ${HOME}/msk_gis_elm_r0125_rcm.nc
 
-# Once ALL trimmed mask files exist, append ELM masks to RACMO mask files to enable computation of intersection masks
+# Part 4: Put all fields necessary for intersection grid computation into files 
+# Until this point the RACMO ice mask files have been independent of ELM resolution
+# However, computation of the intersection mask must utilize only one ELM resolution
+# Hence we now copy the RACMO ice mask files into ELM resolution-dependent files in preparation for intersection masking
+# Remember, the last suffix indicates the grid shape in the file
+/bin/cp ${HOME}/msk_ais_rcm.nc ${HOME}/msk_ais_r05_rcm.nc
+/bin/cp ${HOME}/msk_gis_rcm.nc ${HOME}/msk_gis_r05_rcm.nc
+/bin/cp ${HOME}/msk_ais_rcm.nc ${HOME}/msk_ais_r0125_rcm.nc
+/bin/cp ${HOME}/msk_gis_rcm.nc ${HOME}/msk_gis_r0125_rcm.nc
+
+# Append ELM masks to new, resolution-dependent RACMO mask files to enable computation of intersection masks
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r05.nc ${HOME}/msk_ais_rcm_r05.nc
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r05.nc ${HOME}/msk_gis_rcm_r05.nc
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r0125.nc ${HOME}/msk_ais_rcm_r0125.nc
 ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r0125.nc ${HOME}/msk_gis_rcm_r0125.nc
 
-# grd_trg determines which ELM resolution provides the generic Icemask_qice mask used in intersection map calculation
-if [ ${grd_trg} = 'r05' ]; then
-    ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_rcm.nc
-    ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_rcm.nc
-elif [ ${grd_trg} = 'r0125' ]; then
-    ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_rcm.nc
-    ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_rcm.nc
-fi # !false
+ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_r05_rcm.nc
+ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_r05_rcm.nc
+ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_r0125_rcm.nc
+ncks -A -C -v QICE,Icemask_qice ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_r0125_rcm.nc
 
-# Unless renamed, r05 and r0125 masks would overwrite eachother in RACMO mask files
+# Unless renamed first, r05 and r0125 masks would overwrite eachother when appended to RACMO mask files
 ncrename -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_elm_r05_rcm.nc
 ncrename -v Icemask_qice,Icemask_qice_r05 ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_elm_r05_rcm.nc
 ncrename -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_elm_r0125_rcm.nc
 ncrename -v Icemask_qice,Icemask_qice_r0125 ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_elm_r0125_rcm.nc
 
 # Append ELM masks with grid-specific names to RACMO mask files
-ncks -A -C -v Icemask_qice_r05 ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_rcm.nc
-ncks -A -C -v Icemask_qice_r05 ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_rcm.nc
-ncks -A -C -v Icemask_qice_r0125 ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_rcm.nc
-ncks -A -C -v Icemask_qice_r0125 ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_rcm.nc
+# Store r05 grid in r0125 mask file and visa versa
+ncks -A -C -v Icemask_qice_r05 ${HOME}/msk_ais_elm_r05_rcm.nc ${HOME}/msk_ais_r0125_rcm.nc
+ncks -A -C -v Icemask_qice_r05 ${HOME}/msk_gis_elm_r05_rcm.nc ${HOME}/msk_gis_r0125_rcm.nc
+ncks -A -C -v Icemask_qice_r0125 ${HOME}/msk_ais_elm_r0125_rcm.nc ${HOME}/msk_ais_r05_rcm.nc
+ncks -A -C -v Icemask_qice_r0125 ${HOME}/msk_gis_elm_r0125_rcm.nc ${HOME}/msk_gis_r05_rcm.nc
 
-# Compute intersection and difference masks
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_rcm.nc ${HOME}/msk_ais_rcm.nc # AIS intersection masks on RACMO grid
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_rcm.nc ${HOME}/msk_gis_rcm.nc # GrIS intersection masks on RACMO grid
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_rcm_r05.nc ${HOME}/msk_ais_r05.nc # AIS intersection masks on ELM r05 grid
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_rcm_r05.nc ${HOME}/msk_gis_r05.nc # GrIS intersection masks on ELM r05 grid
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_rcm_r0125.nc ${HOME}/msk_ais_r0125.nc # AIS intersection masks on ELM r0125 grid
-ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_rcm_r0125.nc ${HOME}/msk_gis_r0125.nc # GrIS intersection masks on ELM r0125 grid
+# Part 5: Compute intersection masks and diagnostic difference masks
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_r05_rcm.nc ${HOME}/msk_ais_r05_rcm.nc # AIS intersection masks on RACMO grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_r05_rcm.nc ${HOME}/msk_gis_r05_rcm.nc # GrIS intersection masks on RACMO grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_r0125_rcm.nc ${HOME}/msk_ais_r0125_rcm.nc # AIS intersection masks on RACMO grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_r0125_rcm.nc ${HOME}/msk_gis_r0125_rcm.nc # GrIS intersection masks on RACMO grid
 
-# Move data from working directory (${HOME}) to grid directory in ${DATA} to prevent confusion
-/bin/mv ${HOME}/msk_ais_rcm.nc ${DATA}/grids
-/bin/mv ${HOME}/msk_gis_rcm.nc ${DATA}/grids
-/bin/mv ${HOME}/msk_ais_r05.nc ${DATA}/grids
-/bin/mv ${HOME}/msk_gis_r05.nc ${DATA}/grids
-/bin/mv ${HOME}/msk_ais_r0125.nc ${DATA}/grids
-/bin/mv ${HOME}/msk_gis_r0125.nc ${DATA}/grids
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_rcm_r05.nc ${HOME}/msk_ais_rcm_r05.nc # AIS intersection masks on ELM r05 grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_rcm_r05.nc ${HOME}/msk_gis_rcm_r05.nc # GrIS intersection masks on ELM r05 grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_ais_rcm_r0125.nc ${HOME}/msk_ais_rcm_r0125.nc # AIS intersection masks on ELM r0125 grid
+ncap2 -O -S ~/icemask/msk_nsx.nco ${HOME}/msk_gis_rcm_r0125.nc ${HOME}/msk_gis_rcm_r0125.nc # GrIS intersection masks on ELM r0125 grid
 
+# Part 6: Move data from working directory (${HOME}) to grid directory in ${DATA} to prevent confusion
+/bin/mv ${HOME}/msk_ais_r05_rcm.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_gis_r05_rcm.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_ais_rcm_r05.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_gis_rcm_r05.nc ${DATA}/grids
+
+/bin/mv ${HOME}/msk_ais_r0125_rcm.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_gis_r0125_rcm.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_ais_rcm_r0125.nc ${DATA}/grids
+/bin/mv ${HOME}/msk_gis_rcm_r0125.nc ${DATA}/grids
+
+# Part 7: fxm: Add cleanup step
 
