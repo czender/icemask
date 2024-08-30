@@ -26,8 +26,8 @@ if false; then
     # ELM->RACMO maps: TR algorithms must use --a2o option and switch grid orders
     ncremap --a2o -a traave -s ${DATA}/grids/r05_360x720.nc -g ${DATA}/grids/racmo_gis_566x438.nc --map=${DATA}/maps/map_r05_to_racmo_gis_566x438_traave.20240801.nc
     ncremap --a2o -a traave -s ${DATA}/grids/r05_360x720.nc -g ${DATA}/grids/racmo_ais_591x726.nc --map=${DATA}/maps/map_r05_to_racmo_ais_591x726_traave.20240801.nc
-    ncremap --a2o -a traave -s ${DATA}/grids/r0125_1440x2880.20210401.nc.nc -g ${DATA}/grids/racmo_gis_566x438.nc --map=${DATA}/maps/map_r0125_to_racmo_gis_566x438_traave.20240801.nc
-    ncremap --a2o -a traave -s ${DATA}/grids/r0125_1440x2880.20210401.nc.nc -g ${DATA}/grids/racmo_ais_591x726.nc --map=${DATA}/maps/map_r0125_to_racmo_ais_591x726_traave.20240801.nc
+    ncremap --a2o -a traave -s ${DATA}/grids/r0125_1440x2880.20210401.nc -g ${DATA}/grids/racmo_gis_566x438.nc --map=${DATA}/maps/map_r0125_to_racmo_gis_566x438_traave.20240801.nc
+    ncremap --a2o -a traave -s ${DATA}/grids/r0125_1440x2880.20210401.nc -g ${DATA}/grids/racmo_ais_591x726.nc --map=${DATA}/maps/map_r0125_to_racmo_ais_591x726_traave.20240801.nc
 fi # !false
 
 # Part 3: Derive, trim, and regrid masks for each ice sheet and each grid
